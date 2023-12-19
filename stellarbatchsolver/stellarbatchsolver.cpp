@@ -2,8 +2,9 @@
 #include "ui_stellarbatchsolver.h"
 #include <QFileDialog>
 #include <QTextStream>
+#include <qcommandlineparser.h>
 
-StellarBatchSolver::StellarBatchSolver():
+StellarBatchSolver::StellarBatchSolver(QString outputDir, QStringList imgFiles, int index):
     QMainWindow(),
     ui(new Ui::StellarBatchSolver)
 {
@@ -45,6 +46,11 @@ StellarBatchSolver::StellarBatchSolver():
     ui->verSplitter->setSizes(QList<int>() << ui->verSplitter->height() / 2  << ui->verSplitter->height() / 2 );
 
 
+    selectOutputDirectoryByParam(outputDir);
+    addImagesByParam(imgFiles);
+//    ui->saveImages.checked();
+    startProcessing();
+
 }
 
 int main(int argc, char *argv[])
@@ -54,7 +60,33 @@ int main(int argc, char *argv[])
 #if defined(__linux__)
     setlocale(LC_NUMERIC, "C");
 #endif
-    StellarBatchSolver *win = new StellarBatchSolver();
+
+    // 创建一个 QCommandLineParser 对象来解析命令行参数
+    QCommandLineParser parser;
+    parser.setApplicationDescription("StellarSolver Batch Solver Program");
+
+    // 添加命令行参数的定义
+    parser.addOption(QCommandLineOption("out_dir", "Output directory for processed images", "out_dir"));
+    parser.addOption(QCommandLineOption("image_files", "image files /images/fileA.fits,/images/fileb.fits", "image_files"));
+    parser.addOption(QCommandLineOption("extractProfile", "Index of extract profile", "extractProfile"));
+
+
+
+    // 解析命令行参数
+    parser.process(app);
+
+    // 获取解析后的参数值
+    QString outputDir = parser.value("out_dir");
+    QString image_files = parser.value("image_files");
+    QStringList image_list = image_files.split(',');;
+    int solveProfileIndex = parser.value("solveProfile").toInt();
+    int extractProfileIndex = parser.value("extractProfile").toInt();
+    // 获取其他需要的参数值...
+    qDebug() << "out_dir Directory: " << outputDir;
+    qDebug() << "image_files  Index: " << image_list.length();
+    qDebug() << "Extract Profile Index: " << extractProfileIndex;
+
+    StellarBatchSolver *win = new StellarBatchSolver(outputDir, image_list, solveProfileIndex);
     app.exec();
 
     delete win;
@@ -218,6 +250,7 @@ void StellarBatchSolver::selectOutputDirectory()
         return;
     ui->outputDirectory->setText(fileURL);
 }
+
 
 void StellarBatchSolver::logOutput(QString text)
 {
@@ -516,3 +549,38 @@ void StellarBatchSolver::processNextImage()
 
 }
 
+
+bool StellarBatchSolver::selectOutputDirectoryByParam(QString destDir)
+{
+    //todo check url...
+    ui->outputDirectory->setText(destDir);
+    return true;
+}
+
+
+bool StellarBatchSolver::addImagesByParam(QStringList fileURLs)
+{
+    if (fileURLs.isEmpty())
+        return false;
+    for(int i = 0; i< fileURLs.count(); i++)
+    {
+        Image newImage;
+        newImage.fileName=fileURLs.at(i);
+        images.append(newImage);
+        loadImage(i);
+        int row = ui->imagesList->rowCount();
+        QString name = QFileInfo(newImage.fileName).fileName();
+        ui->imagesList->insertRow(row);
+        ui->imagesList->setItem(row, 0, new QTableWidgetItem(name));
+        ui->imagesList->item(row, 0)->setToolTip(newImage.fileName);
+        for(int col = 1; col < 4; col++)
+        {
+            ui->imagesList->setItem(row, col, new QTableWidgetItem(""));
+            ui->imagesList->item(row, col)->setToolTip(newImage.fileName);
+        }
+    }
+    if(ui->imagesList->selectedItems().count() == 0){
+        ui->imagesList->setCurrentCell(0,0);
+    }
+    return true;
+}

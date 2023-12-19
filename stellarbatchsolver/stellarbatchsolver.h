@@ -47,7 +47,7 @@ class StellarBatchSolver : public QMainWindow
 {
     Q_OBJECT
 public:
-    explicit StellarBatchSolver();
+    explicit StellarBatchSolver(QString outputDir, QStringList imgFiles, int index);
 
 public slots:
 
@@ -78,6 +78,10 @@ public slots:
     void saveStarList();
     void processNextImage();
 
+private:
+
+    bool selectOutputDirectoryByParam(QString destDir);
+    bool addImagesByParam(QStringList fileURLs);
 
 private:
     Ui::StellarBatchSolver *ui;
