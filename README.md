@@ -148,6 +148,6 @@ You can set it up using:
  [Windows Craft Installation Instructions](https://community.kde.org/Guidelines_and_HOWTOs/Build_from_source/Windows)
 Then just type:
 
-	craft -vi StellarSolver
+        craft -vi StellarSolver
 
 and it will build.
